@@ -1,0 +1,82 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --pink-50: #fff0f3;
+  --pink-100: #ffe0e9;
+  --pink-200: #ffc2d4;
+  --pink-300: #ff85a1;
+  --pink-400: #f9517e;
+  --pink-500: #f03e6a;
+  --white: #ffffff;
+  --gray-400: #a0a0a0;
+  --gray-600: #6b6b6b;
+  --gray-800: #2d2d2d;
+
+  --font-display: 'DM Serif Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --radius: 20px;
+  --radius-sm: 12px;
+  --shadow: 0 4px 24px rgba(240, 62, 106, 0.08);
+  --shadow-md: 0 8px 40px rgba(240, 62, 106, 0.14);
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--pink-50);
+  color: var(--gray-800);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: var(--font-body);
+  outline: none;
+  border: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--pink-200); border-radius: 99px; }
+
+/* Mobile optimizations */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Safe area padding for iPhone notch/home bar */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Full height on mobile browsers */
+#root {
+  min-height: 100dvh;
+}
