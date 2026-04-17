@@ -2,24 +2,32 @@ const cron = require('node-cron')
 const webpush = require('web-push')
 const db = require('./db')
 
-const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-
 // Runs every minute
 cron.schedule('* * * * *', async () => {
-  const now = new Date()
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  const currentDay = DAYS[now.getDay()]
-
   // Get subscription
   const subRow = db.prepare('SELECT subscription FROM subscriptions LIMIT 1').get()
   if (!subRow) return
 
-  // Get medications
-  const configRow = db.prepare('SELECT medications FROM config LIMIT 1').get()
+  // Get medications + timezone
+  const configRow = db.prepare('SELECT medications, timezone FROM config LIMIT 1').get()
   if (!configRow) return
 
   const medications = JSON.parse(configRow.medications)
   const subscription = JSON.parse(subRow.subscription)
+  const timezone = configRow.timezone || 'America/New_York'
+
+  // Get current time in user's timezone
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    weekday: 'short',
+    hour12: false
+  }).formatToParts(now)
+
+  const currentTime = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value}`
+  const currentDay = parts.find(p => p.type === 'weekday').value.toLowerCase()
 
   // Find meds due right now
   const dueMeds = medications.filter(med => {
@@ -42,7 +50,7 @@ cron.schedule('* * * * *', async () => {
       subscription,
       JSON.stringify({ title, body })
     )
-    console.log(`[${currentTime}] Notification sent for: ${names}`)
+    console.log(`[${currentTime} ${timezone}] Notification sent for: ${names}`)
   } catch (err) {
     console.error('Push failed:', err.message)
   }

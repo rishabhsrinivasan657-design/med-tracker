@@ -52,11 +52,11 @@ async function sendSubscriptionToServer(subscription) {
   })
 }
 
-export async function syncConfigToServer(medications) {
+export async function syncConfigToServer(medications, timezone) {
   await fetch(`${BACKEND}/api/config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ medications }),
+    body: JSON.stringify({ medications, timezone }),
   })
 }
 

@@ -38,21 +38,22 @@ app.post('/api/subscribe', (req, res) => {
 
 // Save medication config from frontend
 app.post('/api/config', (req, res) => {
-  const { medications } = req.body
+  const { medications, timezone } = req.body
   if (!medications) return res.status(400).json({ error: 'No medications' })
 
   db.prepare('DELETE FROM config').run()
-  db.prepare('INSERT INTO config (medications) VALUES (?)').run(
-    JSON.stringify(medications)
+  db.prepare('INSERT INTO config (medications, timezone) VALUES (?, ?)').run(
+    JSON.stringify(medications),
+    timezone || 'America/New_York'
   )
   res.json({ ok: true })
 })
 
 // Get config
 app.get('/api/config', (req, res) => {
-  const row = db.prepare('SELECT medications FROM config LIMIT 1').get()
-  if (!row) return res.json({ medications: [] })
-  res.json({ medications: JSON.parse(row.medications) })
+  const row = db.prepare('SELECT medications, timezone FROM config LIMIT 1').get()
+  if (!row) return res.json({ medications: [], timezone: 'America/New_York' })
+  res.json({ medications: JSON.parse(row.medications), timezone: row.timezone })
 })
 
 // Send a test notification (for testing)

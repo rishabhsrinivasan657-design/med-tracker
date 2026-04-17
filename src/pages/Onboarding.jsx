@@ -83,15 +83,16 @@ export default function Onboarding() {
   }
 
   const finish = async () => {
-    localStorage.setItem('medbuddy_setup', 'true')
-    localStorage.setItem('medbuddy_config', JSON.stringify({ medications }))
-    try {
-      await syncConfigToServer(medications)
-    } catch (err) {
-      console.warn('Could not sync to server:', err)
-    }
-    navigate('/dashboard')
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  localStorage.setItem('medbuddy_setup', 'true')
+  localStorage.setItem('medbuddy_config', JSON.stringify({ medications, timezone }))
+  try {
+    await syncConfigToServer(medications, timezone)
+  } catch (err) {
+    console.warn('Could not sync to server:', err)
   }
+  navigate('/dashboard')
+}
 
   const formatDays = (days) => {
     if (days.length === 7) return 'Every day'
