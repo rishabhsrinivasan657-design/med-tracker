@@ -6,7 +6,12 @@ const db = require('./db')
 require('./scheduler')
 
 const app = express()
-app.use(cors({ origin: 'http://localhost:5173' }))
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://med-tracker-liart.vercel.app'
+  ]
+}))
 app.use(express.json())
 
 // ── VAPID setup ──────────────────────────────────────────
