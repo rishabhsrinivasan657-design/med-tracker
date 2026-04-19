@@ -92,6 +92,15 @@ app.get('/api/logs', (req, res) => {
   res.json({ logs: JSON.parse(row.logs) })
 })
 
+// Keep server awake on Render free tier
+setInterval(async () => {
+  try {
+    await fetch(`https://med-tracker-bl2u.onrender.com/api/logs`)
+    console.log('Keep-alive ping sent')
+  } catch (e) {
+    console.log('Keep-alive failed:', e.message)
+  }
+}, 10 * 60 * 1000)
 // ── Start ────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on http://localhost:${PORT}`))
