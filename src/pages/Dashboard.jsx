@@ -12,20 +12,13 @@ const MILESTONE_MESSAGES = [
   "Your body thanks you! 💪 Keep going!",
 ]
 
-function missedYesterday(logs, medications) {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const key = yesterday.toISOString().split('T')[0]
-  const dayShort = DAYS[yesterday.getDay()]
-  const medsForDay = medications.filter(m => m.days.includes(dayShort))
-  if (medsForDay.length === 0) return false
-  const log = logs[key]
-  if (!log) return true
-  return !medsForDay.every(m => log[m.id] === 'taken')
+// ── LOCAL DATE HELPERS (timezone-safe) ──────────────────
+function getLocalDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function getTodayKey() {
-  return new Date().toISOString().split('T')[0]
+  return getLocalDateKey()
 }
 
 function getDayName() {
@@ -38,6 +31,19 @@ function getDateDisplay() {
 
 function getTodayShort() {
   return DAYS[new Date().getDay()]
+}
+// ────────────────────────────────────────────────────────
+
+function missedYesterday(logs, medications) {
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const key = getLocalDateKey(yesterday)
+  const dayShort = DAYS[yesterday.getDay()]
+  const medsForDay = medications.filter(m => m.days.includes(dayShort))
+  if (medsForDay.length === 0) return false
+  const log = logs[key]
+  if (!log) return true
+  return !medsForDay.every(m => log[m.id] === 'taken')
 }
 
 function getLogs() {
@@ -62,7 +68,7 @@ function calculateStreak(logs, medications) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    const key = d.toISOString().split('T')[0]
+    const key = getLocalDateKey(d)
     const dayShort = DAYS[d.getDay()]
     const medsForDay = medications.filter(m => m.days.includes(dayShort))
 
@@ -87,7 +93,7 @@ function getLast30Days(logs, medications) {
   for (let i = 29; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    const key = d.toISOString().split('T')[0]
+    const key = getLocalDateKey(d)
     const dayShort = DAYS[d.getDay()]
     const medsForDay = medications.filter(m => m.days.includes(dayShort))
 
@@ -112,19 +118,19 @@ const MONTH_NAMES = ['January','February','March','April','May','June',
   'July','August','September','October','November','December']
 
 const MONTH_QUIPS = [
-  (m) => `A "New Year" resolution that actually stuck. ${m} is yours! 🎆`, // Jan
-  (m) => `Budget session over: ${m} gains are looking very profitable! 📈`, // Feb (Budget Month)
-  (m) => `Don't let your fitness goals fade like ${m} colors! 🎨`,         // Mar (Holi)
-  (m) => `April showers? More like ${m} power! No April Fools here. 💪`,  // Apr
-  (m) => `May the Health be with you! (Even in this 45°C heat) 🌟`,       // May
-  (m) => `Sweating more than a monsoon cloud! ${m} conquered. 🌧️`,       // Jun
-  (m) => `Feeling "Independence" from your old habits this ${m}! 🇮🇳`,     // Jul/Aug vibe
-  (m) => `A-gust of wind couldn't stop you. You're the real Boss. 🦁`,     // Aug
-  (m) => `Modak-vated to stay fit! Crushing ${m} like a pro. 🐘`,         // Sep (Ganesh Chaturthi)
-  (m) => `A "Shubh" month for your health. ${m} was electric! 🪔`,       // Oct (Diwali/Dussehra)
-  (m) => `No "Chilling" in ${m}—only burning those calories! ❄️`,          // Nov
-  (m) => `Ending ${m} with a "Biryani" level of satisfaction! 🍗`,        // Dec
-];
+  (m) => `A "New Year" resolution that actually stuck. ${m} is yours! 🎆`,
+  (m) => `Budget session over: ${m} gains are looking very profitable! 📈`,
+  (m) => `Don't let your fitness goals fade like ${m} colors! 🎨`,
+  (m) => `April showers? More like ${m} power! No April Fools here. 💪`,
+  (m) => `May the Health be with you! (Even in this 45°C heat) 🌟`,
+  (m) => `Sweating more than a monsoon cloud! ${m} conquered. 🌧️`,
+  (m) => `Feeling "Independence" from your old habits this ${m}! 🇮🇳`,
+  (m) => `A-gust of wind couldn't stop you. You're the real Boss. 🦁`,
+  (m) => `Modak-vated to stay fit! Crushing ${m} like a pro. 🐘`,
+  (m) => `A "Shubh" month for your health. ${m} was electric! 🪔`,
+  (m) => `No "Chilling" in ${m}—only burning those calories! ❄️`,
+  (m) => `Ending ${m} with a "Biryani" level of satisfaction! 🍗`,
+]
 
 function isLastDayOfMonth() {
   const today = new Date()
@@ -143,7 +149,7 @@ function getCurrentMonthGrid(logs, medications) {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d)
-    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    const key = getLocalDateKey(date)
     const dayShort = DAYS[date.getDay()]
     const medsForDay = medications.filter(m => m.days.includes(dayShort))
     const isToday = d === today.getDate()
@@ -166,8 +172,8 @@ export default function Dashboard() {
   const [logs, setLogs] = useState(getLogs())
   const [showAllMeds, setShowAllMeds] = useState(false)
   const [notifStatus, setNotifStatus] = useState(
-  typeof Notification !== 'undefined' ? Notification.permission : 'denied'
-)
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  )
   const [milestoneMsg, setMilestoneMsg] = useState(null)
   const [monthMsg, setMonthMsg] = useState(null)
 
@@ -183,89 +189,80 @@ export default function Dashboard() {
   const takenCount = todayMeds.filter(m => todayLog[m.id] === 'taken').length
   const totalCount = todayMeds.length
   const { cells: monthCells, firstDay } = getCurrentMonthGrid(logs, medications)
-  
 
   useEffect(() => {
-  const init = async () => {
-    await registerServiceWorker()
-    const permission = await requestNotificationPermission()
-    setNotifStatus(permission)
-    if (permission === 'granted') await subscribeToPush()
+    const init = async () => {
+      await registerServiceWorker()
+      const permission = await requestNotificationPermission()
+      setNotifStatus(permission)
+      if (permission === 'granted') await subscribeToPush()
 
-    // Load logs from server, fall back to localStorage
-    try {
-      const serverLogs = await fetchLogsFromServer()
-      if (Object.keys(serverLogs).length > 0) {
-        setLogs(serverLogs)
-        localStorage.setItem('medbuddy_logs', JSON.stringify(serverLogs))
+      try {
+        const serverLogs = await fetchLogsFromServer()
+        if (Object.keys(serverLogs).length > 0) {
+          setLogs(serverLogs)
+          localStorage.setItem('medbuddy_logs', JSON.stringify(serverLogs))
+        }
+      } catch (e) {
+        // offline — localStorage fallback already loaded in useState
       }
-    } catch (e) {
-      // offline — localStorage fallback already loaded in useState
     }
-  }
-  init()
-}, [])
+    init()
+  }, [])
 
   const checkMilestone = (newLogs) => {
-  const newStreak = calculateStreak(newLogs, medications)
-  if (newStreak > 0 && newStreak % 10 === 0) {
-    const msg = MILESTONE_MESSAGES[Math.floor(newStreak / 10 - 1) % MILESTONE_MESSAGES.length]
-    setMilestoneMsg({ streak: newStreak, msg })
-  }
+    const newStreak = calculateStreak(newLogs, medications)
+    if (newStreak > 0 && newStreak % 10 === 0) {
+      const msg = MILESTONE_MESSAGES[Math.floor(newStreak / 10 - 1) % MILESTONE_MESSAGES.length]
+      setMilestoneMsg({ streak: newStreak, msg })
+    }
 
-  // Month-end popup
-  if (isLastDayOfMonth()) {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = today.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const allMonthTaken = Array.from({ length: daysInMonth }, (_, i) => {
-      const d = i + 1
-      const date = new Date(year, month, d)
-      const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-      const dayShort = DAYS[date.getDay()]
-      const medsForDay = medications.filter(m => m.days.includes(dayShort))
-      if (medsForDay.length === 0) return true
-      const log = newLogs[key]
-      if (!log) return false
-      return medsForDay.every(m => log[m.id] === 'taken')
-    }).every(Boolean)
+    if (isLastDayOfMonth()) {
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = today.getMonth()
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      const allMonthTaken = Array.from({ length: daysInMonth }, (_, i) => {
+        const d = i + 1
+        const date = new Date(year, month, d)
+        const key = getLocalDateKey(date)
+        const dayShort = DAYS[date.getDay()]
+        const medsForDay = medications.filter(m => m.days.includes(dayShort))
+        if (medsForDay.length === 0) return true
+        const log = newLogs[key]
+        if (!log) return false
+        return medsForDay.every(m => log[m.id] === 'taken')
+      }).every(Boolean)
 
-    if (allMonthTaken) {
-  // Ensure month is within 0-11 range
-  const monthIndex = month % 12; 
-  
-  const monthName = MONTH_NAMES[monthIndex];
-  
-  // Directly access the index since we have 12 specific puns
-  const quip = MONTH_QUIPS[monthIndex](monthName);
-  
-  setMonthMsg({ month: monthName, quip });
-}
+      if (allMonthTaken) {
+        const monthIndex = month % 12
+        const monthName = MONTH_NAMES[monthIndex]
+        const quip = MONTH_QUIPS[monthIndex](monthName)
+        setMonthMsg({ month: monthName, quip })
+      }
+    }
   }
-}
-  
 
   const markTaken = (medId) => {
-  const updated = {
-    ...logs,
-    [todayKey]: { ...todayLog, [medId]: 'taken' }
+    const updated = {
+      ...logs,
+      [todayKey]: { ...todayLog, [medId]: 'taken' }
+    }
+    setLogs(updated)
+    localStorage.setItem('medbuddy_logs', JSON.stringify(updated))
+    syncLogsToServer(updated).catch(() => {})
+    checkMilestone(updated)
   }
-  setLogs(updated)
-  localStorage.setItem('medbuddy_logs', JSON.stringify(updated))
-  syncLogsToServer(updated).catch(() => {}) // fire and forget
-  checkMilestone(updated)
-}
 
   const markAllTaken = () => {
-  const updatedToday = {}
-  todayMeds.forEach(m => updatedToday[m.id] = 'taken')
-  const updated = { ...logs, [todayKey]: { ...todayLog, ...updatedToday } }
-  setLogs(updated)
-  localStorage.setItem('medbuddy_logs', JSON.stringify(updated))
-  syncLogsToServer(updated).catch(() => {}) // fire and forget
-  checkMilestone(updated)
-}
+    const updatedToday = {}
+    todayMeds.forEach(m => updatedToday[m.id] = 'taken')
+    const updated = { ...logs, [todayKey]: { ...todayLog, ...updatedToday } }
+    setLogs(updated)
+    localStorage.setItem('medbuddy_logs', JSON.stringify(updated))
+    syncLogsToServer(updated).catch(() => {})
+    checkMilestone(updated)
+  }
 
   return (
     <div style={styles.container}>
@@ -285,18 +282,18 @@ export default function Dashboard() {
       )}
 
       {/* ── MONTH END POPUP ── */}
-{monthMsg && (
-  <div style={styles.milestoneOverlay} onClick={() => setMonthMsg(null)}>
-    <div style={styles.milestoneCard} onClick={e => e.stopPropagation()}>
-      <div style={{ fontSize: '3rem' }}>🗓️</div>
-      <div style={styles.milestoneStreak}>{monthMsg.month} complete!</div>
-      <div style={styles.milestoneMsg}>{monthMsg.quip}</div>
-      <button style={styles.milestoneBtn} onClick={() => setMonthMsg(null)}>
-        Let's keep going! 🌸
-      </button>
-    </div>
-  </div>
-)}
+      {monthMsg && (
+        <div style={styles.milestoneOverlay} onClick={() => setMonthMsg(null)}>
+          <div style={styles.milestoneCard} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '3rem' }}>🗓️</div>
+            <div style={styles.milestoneStreak}>{monthMsg.month} complete!</div>
+            <div style={styles.milestoneMsg}>{monthMsg.quip}</div>
+            <button style={styles.milestoneBtn} onClick={() => setMonthMsg(null)}>
+              Let's keep going! 🌸
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── HEADER ── */}
       <div style={styles.header}>
@@ -328,10 +325,10 @@ export default function Dashboard() {
 
       {/* ── MISSED YESTERDAY BANNER ── */}
       {missedYest && !allTakenToday && (
-    <div style={styles.missedBanner}>
-        <span>😔 You missed yesterday — don't break the streak again today!</span>
-    </div>
-    )}
+        <div style={styles.missedBanner}>
+          <span>😔 You missed yesterday — don't break the streak again today!</span>
+        </div>
+      )}
 
       {/* ── STREAK CARD ── */}
       <div style={styles.streakCard}>
@@ -395,68 +392,68 @@ export default function Dashboard() {
       </div>
 
       {/* ── CURRENT MONTH HEATMAP ── */}
-<div style={styles.section}>
-  <div style={styles.sectionHeader}>
-    <span style={styles.sectionTitle}>
-      {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-    </span>
-  </div>
+      <div style={styles.section}>
+        <div style={styles.sectionHeader}>
+          <span style={styles.sectionTitle}>
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+        </div>
 
-  <div style={styles.calGrid}>
-    {['S','M','T','W','T','F','S'].map((d, i) => (
-      <div key={i} style={styles.calDayLabel}>{d}</div>
-    ))}
-    {Array.from({ length: firstDay }).map((_, i) => (
-      <div key={`empty-${i}`} />
-    ))}
-    {monthCells.map(cell => (
-      <div
-        key={cell.key}
-        style={{
-          ...styles.calCell,
-          background:
-            cell.status === 'taken' ? 'var(--pink-400)' :
-            cell.status === 'missed' ? 'var(--pink-100)' :
-            cell.status === 'today' ? 'var(--pink-200)' :
-            'transparent',
-          color:
-            cell.status === 'taken' ? 'white' :
-            cell.status === 'missed' ? 'var(--pink-300)' :
-            cell.status === 'today' ? 'var(--pink-400)' :
-            'var(--gray-300)',
-          border: '1.5px solid',
-          borderColor:
-            cell.status === 'taken' ? 'var(--pink-400)' :
-            cell.status === 'today' ? 'var(--pink-400)' :
-            cell.status === 'missed' ? 'var(--pink-200)' :
-            'transparent',
-          fontWeight: cell.isToday ? 700 : 400,
-        }}
-      >
-        {cell.d}
+        <div style={styles.calGrid}>
+          {['S','M','T','W','T','F','S'].map((d, i) => (
+            <div key={i} style={styles.calDayLabel}>{d}</div>
+          ))}
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
+          {monthCells.map(cell => (
+            <div
+              key={cell.key}
+              style={{
+                ...styles.calCell,
+                background:
+                  cell.status === 'taken' ? 'var(--pink-400)' :
+                  cell.status === 'missed' ? 'var(--pink-100)' :
+                  cell.status === 'today' ? 'var(--pink-200)' :
+                  'transparent',
+                color:
+                  cell.status === 'taken' ? 'white' :
+                  cell.status === 'missed' ? 'var(--pink-300)' :
+                  cell.status === 'today' ? 'var(--pink-400)' :
+                  'var(--gray-300)',
+                border: '1.5px solid',
+                borderColor:
+                  cell.status === 'taken' ? 'var(--pink-400)' :
+                  cell.status === 'today' ? 'var(--pink-400)' :
+                  cell.status === 'missed' ? 'var(--pink-200)' :
+                  'transparent',
+                fontWeight: cell.isToday ? 700 : 400,
+              }}
+            >
+              {cell.d}
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.heatmapLegend}>
+          <div style={styles.legendItem}>
+            <div style={{ ...styles.legendDot, background: 'var(--pink-400)' }} />
+            <span>Taken</span>
+          </div>
+          <div style={styles.legendItem}>
+            <div style={{ ...styles.legendDot, background: 'var(--pink-100)', border: '1px solid var(--pink-200)' }} />
+            <span>Missed</span>
+          </div>
+          <div style={styles.legendItem}>
+            <div style={{ ...styles.legendDot, background: 'var(--pink-200)', border: '2px solid var(--pink-400)' }} />
+            <span>Today</span>
+          </div>
+        </div>
+
+        <button style={styles.historyBtn} onClick={() => navigate('/history')}>
+          📅 View history
+        </button>
       </div>
-    ))}
-  </div>
-
-  <div style={styles.heatmapLegend}>
-    <div style={styles.legendItem}>
-      <div style={{ ...styles.legendDot, background: 'var(--pink-400)' }} />
-      <span>Taken</span>
-    </div>
-    <div style={styles.legendItem}>
-      <div style={{ ...styles.legendDot, background: 'var(--pink-100)', border: '1px solid var(--pink-200)' }} />
-      <span>Missed</span>
-    </div>
-    <div style={styles.legendItem}>
-      <div style={{ ...styles.legendDot, background: 'var(--pink-200)', border: '2px solid var(--pink-400)' }} />
-      <span>Today</span>
-    </div>
-  </div>
-
-  <button style={styles.historyBtn} onClick={() => navigate('/history')}>
-    📅 View history
-  </button>
-</div>
 
       {/* ── STATS ── */}
       <div style={styles.statsRow}>
@@ -552,14 +549,14 @@ const styles = {
     gap: '1rem',
   },
   missedBanner: {
-  background: '#fff3e0',
-  border: '2px solid #ffb74d',
-  borderRadius: 'var(--radius-sm)',
-  padding: '0.75rem 1rem',
-  fontSize: '0.85rem',
-  color: '#e65100',
-  fontWeight: 500,
-},
+    background: '#fff3e0',
+    border: '2px solid #ffb74d',
+    borderRadius: 'var(--radius-sm)',
+    padding: '0.75rem 1rem',
+    fontSize: '0.85rem',
+    color: '#e65100',
+    fontWeight: 500,
+  },
   notifBtn: {
     background: 'var(--pink-400)',
     color: 'var(--white)',
@@ -807,34 +804,34 @@ const styles = {
     marginTop: '0.5rem',
   },
   calGrid: {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(7, 1fr)',
-  gap: '4px',
-},
-calDayLabel: {
-  textAlign: 'center',
-  fontSize: '0.7rem',
-  fontWeight: 600,
-  color: 'var(--gray-400)',
-  paddingBottom: '2px',
-},
-calCell: {
-  aspectRatio: '1',
-  borderRadius: '6px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '0.72rem',
-},
-historyBtn: {
-  width: '100%',
-  padding: '0.75rem',
-  borderRadius: 'var(--radius-sm)',
-  background: 'transparent',
-  color: 'var(--pink-400)',
-  fontSize: '0.9rem',
-  fontWeight: 600,
-  border: '2px solid var(--pink-200)',
-  cursor: 'pointer',
-},
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '4px',
+  },
+  calDayLabel: {
+    textAlign: 'center',
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    color: 'var(--gray-400)',
+    paddingBottom: '2px',
+  },
+  calCell: {
+    aspectRatio: '1',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.72rem',
+  },
+  historyBtn: {
+    width: '100%',
+    padding: '0.75rem',
+    borderRadius: 'var(--radius-sm)',
+    background: 'transparent',
+    color: 'var(--pink-400)',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    border: '2px solid var(--pink-200)',
+    cursor: 'pointer',
+  },
 }
