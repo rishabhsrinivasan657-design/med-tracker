@@ -9,7 +9,8 @@ const app = express()
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://med-tracker-liart.vercel.app'
+    'https://med-tracker-liart.vercel.app',
+    'https://med-tracker-dev.vercel.app',
   ]
 }))
 app.use(express.json())
@@ -27,8 +28,6 @@ webpush.setVapidDetails(
 app.post('/api/subscribe', (req, res) => {
   const { subscription } = req.body
   if (!subscription) return res.status(400).json({ error: 'No subscription' })
-
-  // Only keep one subscription (single user)
   db.prepare('DELETE FROM subscriptions').run()
   db.prepare('INSERT INTO subscriptions (subscription) VALUES (?)').run(
     JSON.stringify(subscription)
@@ -40,11 +39,10 @@ app.post('/api/subscribe', (req, res) => {
 app.post('/api/config', (req, res) => {
   const { medications, timezone } = req.body
   if (!medications) return res.status(400).json({ error: 'No medications' })
-
   db.prepare('DELETE FROM config').run()
   db.prepare('INSERT INTO config (medications, timezone) VALUES (?, ?)').run(
     JSON.stringify(medications),
-    timezone || 'America/New_York'
+    timezone || 'Asia/Kolkata'
   )
   res.json({ ok: true })
 })
@@ -52,28 +50,8 @@ app.post('/api/config', (req, res) => {
 // Get config
 app.get('/api/config', (req, res) => {
   const row = db.prepare('SELECT medications, timezone FROM config LIMIT 1').get()
-  if (!row) return res.json({ medications: [], timezone: 'America/New_York' })
+  if (!row) return res.json({ medications: [], timezone: 'Asia/Kolkata' })
   res.json({ medications: JSON.parse(row.medications), timezone: row.timezone })
-})
-
-// Send a test notification (for testing)
-app.post('/api/test-notify', async (req, res) => {
-  const row = db.prepare('SELECT subscription FROM subscriptions LIMIT 1').get()
-  if (!row) return res.status(404).json({ error: 'No subscription found' })
-
-  try {
-    await webpush.sendNotification(
-      JSON.parse(row.subscription),
-      JSON.stringify({
-        title: '💊 MedBuddy',
-        body: 'This is a test notification! Tap to open the app.',
-      })
-    )
-    res.json({ ok: true })
-  } catch (err) {
-    console.error('Push error:', err)
-    res.status(500).json({ error: err.message })
-  }
 })
 
 // Save logs
@@ -92,6 +70,33 @@ app.get('/api/logs', (req, res) => {
   res.json({ logs: JSON.parse(row.logs) })
 })
 
+// Send a test notification
+app.post('/api/test-notify', async (req, res) => {
+  const row = db.prepare('SELECT subscription FROM subscriptions LIMIT 1').get()
+  if (!row) return res.status(404).json({ error: 'No subscription found' })
+  try {
+    await webpush.sendNotification(
+      JSON.parse(row.subscription),
+      JSON.stringify({
+        title: '💊 MedBuddy',
+        body: 'This is a test notification! Tap to open the app.',
+      })
+    )
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Push error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Reset all data (owner use only)
+app.post('/api/reset-db', (req, res) => {
+  db.prepare('DELETE FROM subscriptions').run()
+  db.prepare('DELETE FROM config').run()
+  db.prepare('DELETE FROM logs').run()
+  res.json({ ok: true, message: 'Database cleared' })
+})
+
 // Keep server awake on Render free tier
 setInterval(async () => {
   try {
@@ -101,6 +106,7 @@ setInterval(async () => {
     console.log('Keep-alive failed:', e.message)
   }
 }, 10 * 60 * 1000)
+
 // ── Start ────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on http://localhost:${PORT}`))
