@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registerServiceWorker, subscribeToPush, requestNotificationPermission, syncLogsToServer, fetchLogsFromServer } from '../utils/notifications'
+import { registerServiceWorker, subscribeToPush, requestNotificationPermission, syncLogsToServer, fetchLogsFromServer, syncConfigToServer } from '../utils/notifications'
 
 const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
@@ -197,6 +198,24 @@ export default function Dashboard() {
       setNotifStatus(permission)
       if (permission === 'granted') await subscribeToPush()
 
+      // Sync config: restore to server if server is empty but localStorage has data
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/config`)
+        const serverConfig = await res.json()
+        if (serverConfig?.medications?.length > 0) {
+          localStorage.setItem('medbuddy_config', JSON.stringify(serverConfig))
+        } else {
+          const localConfig = getConfig()
+          if (localConfig?.medications?.length > 0) {
+            await syncConfigToServer(localConfig.medications, localConfig.timezone || 'Asia/Kolkata')
+            console.log('Restored config to server from localStorage')
+          }
+        }
+      } catch (e) {
+        console.log('Config sync failed, using localStorage')
+      }
+
+      // Fetch logs from server
       try {
         const serverLogs = await fetchLogsFromServer()
         if (Object.keys(serverLogs).length > 0) {
