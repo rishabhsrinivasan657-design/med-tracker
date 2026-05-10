@@ -97,6 +97,13 @@ app.post('/api/reset-db', (req, res) => {
   res.json({ ok: true, message: 'Database cleared' })
 })
 
+// TEMPORARY — remove after running once
+app.post('/api/fix-config', (req, res) => {
+  db.prepare('DELETE FROM config').run()
+  db.prepare('DELETE FROM subscriptions').run()
+  res.json({ ok: true })
+})
+
 // Keep server awake on Render free tier
 setInterval(async () => {
   try {
