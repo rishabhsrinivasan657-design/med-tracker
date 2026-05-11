@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { registerServiceWorker, subscribeToPush, requestNotificationPermission, syncLogsToServer, fetchLogsFromServer } from '../utils/notifications'
+
 import { registerServiceWorker, subscribeToPush, requestNotificationPermission, syncLogsToServer, fetchLogsFromServer, syncConfigToServer } from '../utils/notifications'
 
 const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
